@@ -1,6 +1,8 @@
 import datetime
 import os.path
 import tkinter as tk
+from tkinter import ttk
+import ttkbootstrap as ttkb
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -57,21 +59,28 @@ def get_upcoming_meetings():
     return meetings
 
 def show_meetings():
-    root = tk.Tk()
-    root.title("Upcoming Google Meet Meetings")
-    root.geometry("400x200")
+    # Use ttkbootstrap instead of the standard Tkinter root
+    app = ttkb.Window(themename="solar")  # You can change theme to other options like "darkly", "minty", "journal", etc.
+    app.title("Upcoming Google Meet Meetings")
+    app.geometry("500x300")
     
     meetings = get_upcoming_meetings()
+    
+    frame = ttkb.Frame(app, padding=10)
+    frame.pack(fill="both", expand=True)
+    
     if not meetings:
-        label = tk.Label(root, text="No upcoming Google Meet meetings found.")
+        label = ttkb.Label(frame, text="No upcoming Google Meet meetings found.", font=('Helvetica', 12), bootstyle="danger")
         label.pack(pady=20)
     else:
         for meeting in meetings:
             meeting_info = f"{meeting['summary']} - {meeting['start']}\nLink: {meeting['link']}"
-            label = tk.Label(root, text=meeting_info, wraplength=300, justify="left")
-            label.pack(pady=10)
+            meeting_frame = ttkb.Labelframe(frame, text="Meeting Info", padding=10, bootstyle="info")
+            label = ttkb.Label(meeting_frame, text=meeting_info, wraplength=400, justify="left", font=('Helvetica', 10))
+            label.pack(anchor="w")
+            meeting_frame.pack(fill="x", pady=10)
 
-    root.mainloop()
+    app.mainloop()
 
 if __name__ == "__main__":
     show_meetings()
