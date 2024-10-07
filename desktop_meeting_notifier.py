@@ -58,16 +58,11 @@ def get_upcoming_meetings():
             meetings.append(meeting_info)
     return meetings
 
-def show_meetings():
-    # Use ttkbootstrap instead of the standard Tkinter root
-    app = ttkb.Window(themename="solar")  # You can change theme to other options like "darkly", "minty", "journal", etc.
-    app.title("Upcoming Google Meet Meetings")
-    app.geometry("500x300")
-    
+def refresh_meetings(frame):
+    for widget in frame.winfo_children():
+        widget.destroy()
+
     meetings = get_upcoming_meetings()
-    
-    frame = ttkb.Frame(app, padding=10)
-    frame.pack(fill="both", expand=True)
     
     if not meetings:
         label = ttkb.Label(frame, text="No upcoming Google Meet meetings found.", font=('Helvetica', 12), bootstyle="danger")
@@ -75,10 +70,58 @@ def show_meetings():
     else:
         for meeting in meetings:
             meeting_info = f"{meeting['summary']} - {meeting['start']}\nLink: {meeting['link']}"
-            meeting_frame = ttkb.Labelframe(frame, text="Meeting Info", padding=10, bootstyle="info")
-            label = ttkb.Label(meeting_frame, text=meeting_info, wraplength=400, justify="left", font=('Helvetica', 10))
-            label.pack(anchor="w")
-            meeting_frame.pack(fill="x", pady=10)
+            
+            # Add a rounded "card" style frame for each meeting
+            meeting_frame = ttkb.Frame(frame, padding=10, bootstyle="secondary", borderwidth=1, relief="solid")
+            meeting_frame.pack(fill="x", padx=10, pady=10)
+            
+            # Meeting info with a larger summary and a smaller start time
+            title = ttkb.Label(meeting_frame, text=meeting['summary'], font=('Helvetica', 14, 'bold'), bootstyle="primary")
+            title.pack(anchor="w")
+            
+            time_label = ttkb.Label(meeting_frame, text=meeting['start'], font=('Helvetica', 10), bootstyle="secondary")
+            time_label.pack(anchor="w", pady=5)
+
+            # Show the Google Meet link as a button for easy access
+            link_button = ttkb.Button(meeting_frame, text="Join Meeting", bootstyle="info-outline", command=lambda l=meeting['link']: open_meeting(l))
+            link_button.pack(anchor="w", pady=5)
+
+    frame.after(60000, lambda: refresh_meetings(frame))
+
+def open_meeting(link):
+    import webbrowser
+    webbrowser.open(link)
+
+def show_meetings():
+    app = ttkb.Window(themename="darkly")
+    app.title("Upcoming Google Meet Meetings")
+    app.geometry("400x500")
+    
+    title_label = ttkb.Label(app, text="Google Meet Meetings", font=('Helvetica', 18, 'bold'), bootstyle="primary")
+    title_label.pack(pady=20)
+
+    frame = ttkb.Frame(app, padding=10)
+    frame.pack(fill="both", expand=True)
+
+    refresh_meetings(frame)
+    
+    # Create a scrollable window for overflow meetings
+    canvas = tk.Canvas(app)
+    scrollbar = ttkb.Scrollbar(app, orient="vertical", command=canvas.yview)
+    scrollable_frame = ttkb.Frame(canvas)
+
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(
+            scrollregion=canvas.bbox("all")
+        )
+    )
+
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
 
     app.mainloop()
 
